@@ -1,4 +1,7 @@
 import random
+import json
+import csv
+import os
 
 deistv = [
     "Исследовать",
@@ -94,24 +97,77 @@ def print_inventory():
     history.append(f"Инвентарь: {inventory}")
 
 
+SAVE_FILE = "save_data.json"
+CSV_FILE = "game_data.csv"
+
+def save_game_data():
+    data_to_save = {
+        "nachalo": {
+            "progress": nachalo["progress"],
+            "inventory": list(nachalo["inventory"])
+        },
+        "history": history
+    }
+    with open(SAVE_FILE, "w") as save_file:
+        json.dump(data_to_save, save_file)
+    print("Данные игры сохранены.")
+
+def load_game_data():
+    try:
+        with open(SAVE_FILE, "r") as save_file:
+            data = json.load(save_file)
+            nachalo.update(data.get("nachalo", {}))
+            history.extend(data.get("history", []))
+        print("Данные игры загружены.")
+    except FileNotFoundError:
+        print("Не найдены сохраненные данные игры.")
+def delete_game_data():
+    try:
+        os.remove(SAVE_FILE)
+        print("Данные игры удалены.")
+    except FileNotFoundError:
+        print("Не найдены сохраненные данные игры.")
+
+def save_to_csv():
+    with open(CSV_FILE, mode='w', newline='') as csv_file:
+        fieldnames = ['Игрок', 'Прогресс', 'Инвентарь']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+        if not os.path.exists(CSV_FILE):
+            writer.writeheader()
+
+        writer.writerow({'Игрок': 'Игрок 1', 'Прогресс': nachalo['progress'], 'Инвентарь': ', '.join(nachalo['inventory'])})
+        print("Данные сохранены в CSV.")
+
 def main():
     print("Добро пожаловать в игру-новеллу!")
+
     while nachalo["progress"] < len(komnata) - 1:
         story()
         print("\nДоступные действия:")
-        for i, action in enumerate(deistv, start=1):
+        print("1. Сохранить игру")
+        print("2. Загрузить игру")
+        print("3. Удалить сохранение")
+        for i, action in enumerate(deistv, start=4):
             print(f"{i}. {action}")
-        choice = int(input("Выберите действие (1-6): "))
-        if 1 <= choice <= 6:
-            perform_action(deistv[choice - 1])
+
+        choice = int(input("Выберите действие (1-9): "))
+        if choice == 1:
+            save_game_data()
+        elif choice == 2:
+            load_game_data()
+        elif choice == 3:
+            delete_game_data()
+        elif 4 <= choice <= 9:
+            perform_action(deistv[choice - 4])
             if check_win():
                 break
         else:
             print("Неверный выбор. Попробуйте снова.")
 
+    save_to_csv()
     story()
     print("Вы прошли игру!")
-
 
 if __name__ == "__main__":
     main()
